@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+    <title></title>
+</head>
+
+<style>
+
+  .MAIgrid {
+    height: 90vh;
+    display: grid;
+    grid-template-columns: 40% 60%;
+    grid-template-rows: 75% auto;
+    grid-template-areas:
+      "input output"
+      "assumptions assumptions";
+  }
+
+  .MAIinput {
+    grid-area: input;
+  }
+
+  .MAIoutput {
+    grid-area: output;
+  }
+
+  .MAIassumptions {
+    grid-area: assumptions;
+  }
+
+
+  .MAItitle {
+    box-sizing: border-box;
+    margin: 2vh;
+    border: solid thin;
+    border-top-left-radius: 1vh;
+    border-top-right-radius: 1vh;
+    background-color: black;
+    color: white;
+    font-size: large;
+    font-weight: bold;
+    padding: 1vh 1vh 0.5vh 1vh;
+  }
+
+  .MAIbox {
+    box-sizing: border-box;
+    margin: 2vh;
+    margin-top: -2.3vh;
+    border: solid thin;
+    border-bottom-left-radius: 1vh;
+    border-bottom-right-radius: 1vh;
+    padding: 1vh;
+    box-shadow: 0.2vh 0.4vh 0.5vh #111111;
+
+  }
+
+
+
+
+</style>
+
+<script src='magicItems.js'>
+</script>
+
+<script>
+
+
+
+
+
+  function initApp() {
+
+    const miDataList = document.getElementById("magicItemList");
+
+    // Loop through the magicItems array and add each name to the datalist
+    magicItems.forEach(item => {
+      const option = document.createElement("option");
+      option.value = item.name;
+      miDataList.appendChild(option);
+    });
+
+    generateTable( magicItems );
+
+    updateEverything();
+
+  }
+
+  function updateEverything() {
+
+    let whichItem = document.getElementById('whichItemInput').value;
+
+    foundItem = magicItems.find( item => item.name.toLowerCase() == whichItem.toLowerCase() );
+
+//    console.log( foundItem );
+
+    document.getElementById('miPrice').innerHTML = formatCurrency( foundItem.price );
+
+    document.getElementById('miWeeks').innerHTML = foundItem.weeksToMake;
+
+    document.getElementById('miSTDay').innerHTML = foundItem.STPerDay;
+
+    document.getElementById('miCostWeek').innerHTML = formatCurrency( foundItem.costPerWeekOfIngredients );
+
+    let apprenticeSTRequired = Math.ceil( ( parseInt(foundItem.STPerDay) - parseInt(document.getElementById('leadST').value) ) / 25 );
+
+    document.getElementById('miNumberOfApprentices').innerHTML = apprenticeSTRequired;
+
+    document.getElementById('miCostOfApprentices').innerHTML = formatCurrency( apprenticeSTRequired * 25 );
+
+    totalCostPerWeek = parseInt( foundItem.costPerWeekOfIngredients + ( apprenticeSTRequired * 25 ) )
+
+    document.getElementById('miTotalCost').innerHTML = formatCurrency( totalCostPerWeek );
+
+    generateOutput();
+
+  }
+
+  function generateOutput() {
+
+    leadDX = parseInt( document.getElementById('leadDX').value );
+
+    iterations = parseInt( document.getElementById('iterations').value );
+
+    results = new Array(520).fill(0);
+    totalWeeks = 0;
+    totalCost = 0
+
+    for ( let i = 0; i < iterations; i++ ) {
+
+      spent = 0;
+
+      weeksPassed = 0
+
+      progress = 0;
+
+      fails = 0;
+
+      weeksToMake = parseInt( foundItem.weeksToMake );
+
+      while ( progress < weeksToMake ) {
+
+        spent += totalCostPerWeek;
+
+        weeksPassed++;
+
+        weeklyRoll = roll3d6();
+
+        if ( weeklyRoll == 18 ) {
+
+          fails++;
+
+          progress = 0;
+
+        } else {
+
+          if ( weeklyRoll <= leadDX ) {
+
+            progress++;
+
+          }
+
+        }
+
+        if ( weeksPassed > 520 ) {
+
+          progress = 520;
+
+        } // that should prevent endless loops;
+
+      } // this means they finished progress
+
+      results[ weeksPassed ]++;
+
+      totalWeeks += weeksPassed;
+
+      totalCost += spent;
+
+    }
+
+    // report back
+
+    document.getElementById('averageCompletion').innerHTML = totalWeeks / iterations;
+
+    document.getElementById('averageCost').innerHTML = formatCurrency( totalCost / iterations );
+
+    document.getElementById('averageProfit').innerHTML = formatCurrency( foundItem.price - ( totalCost / iterations ) );
+
+    document.getElementById('averageProfitPerWeek').innerHTML = formatCurrency( ( foundItem.price - ( totalCost / iterations ) ) / ( totalWeeks / iterations ) );
+
+
+
+  }
+
+
+  function roll3d6() {
+
+    return ( Math.ceil(Math.random() * 6 ) + Math.ceil(Math.random() * 6 ) + Math.ceil(Math.random()*6) );
+
+  }
+
+
+  function generateTable(data) {
+      // Create a table element
+      const table = document.createElement('table');
+      table.style.width = '100%'; // Set table width
+      table.style.borderCollapse = 'collapse'; // Remove spacing between cells
+
+      // Create table header
+      const header = table.createTHead();
+      const headerRow = header.insertRow();
+      const headers = Object.keys(data[0]);
+
+      headers.forEach(headerText => {
+          const th = document.createElement('th');
+          th.textContent = headerText.charAt(0).toUpperCase() + headerText.slice(1); // Capitalize first letter
+          th.style.padding = '8px'; // Padding for header cells
+          th.style.textAlign = 'left'; // Align text to left
+          headerRow.appendChild(th);
+      });
+
+      // Create table body
+      const tbody = table.createTBody();
+      data.forEach((item, index) => {
+          const row = tbody.insertRow();
+
+          // Apply light grey background for every other row
+          if (index % 2 === 1) {
+              row.style.backgroundColor = '#b2b2b2'; // Light grey background
+          }
+
+          headers.forEach(headerText => {
+              const cell = row.insertCell();
+              cell.textContent = item[headerText];
+              cell.style.padding = '8px'; // Padding for body cells
+              // No border styles are set, so default is used
+          });
+      });
+
+      // Append the table to the div
+      const refTableDiv = document.getElementById('refTable');
+      refTableDiv.innerHTML = ''; // Clear existing content
+      refTableDiv.appendChild(table);
+  }
+
+  function formatCurrency(amountString) {
+      // Convert the string to a number
+      const amount = parseFloat(amountString);
+
+      // Check if the conversion was successful
+      if (isNaN(amount)) {
+          return "Invalid number";
+      }
+
+      // Format the number as currency without decimal places
+      return `$${amount.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+  }
+
+
+</script>
+
+<body onload='initApp()'>
+
+
+  <datalist id="magicItemList">
+  </datalist>
+
+<div class = 'MAIgrid'>
+
+  <div class='MAIinput'>
+
+    <div class='MAItitle'>
+      Input
+    </div>
+
+    <div class='MAIbox'>
+
+      <br>
+      Spell: <input id='whichItemInput' list='magicItemList' value='blur' onchange='updateEverything()'></input><br>
+      <br>
+      Price: <span id='miPrice'></span><br>
+      <br>
+      Notes: <span id='miNotes'>data missing</span><br>
+      <br>
+      Weeks to Make: <span id='miWeeks'></span><br>
+      <br>
+      ST per Day: <span id='miSTDay'></span><br>
+      <br>
+      Cost per Week: <span id='miCostWeek'></span><br>
+      <br>
+      Ingredients Weekly: <span id='miIngredients'></span><br>
+      <br>
+      Apprentices Required: <span id='miNumberOfApprentices'></span><br>
+      <br>
+      Apprentices Cost per Week: <span id='miCostOfApprentices'></span><br>
+      <br>
+      Total Cost per Week: <span id='miTotalCost'></span><br>
+      <br>
+
+
+      <br>
+      <br>
+      Lead Wizard DX:<input id='leadDX' value='12' onchange='updateEverything()'></input><br>
+      <br>
+      Lead Wizard's ST contribution per day: <input id='leadST' value='16' onchange='updateEverything()'></input><br>
+      <br>
+      Iterations:<input id='iterations' value='1000' onchange='updateEverything()'></input><br>
+
+
+
+    </div>
+
+
+  </div>   <!-- end of MAIinput -->
+
+
+  <div class='MAIoutput'>
+
+    <div class='MAItitle'>
+      Output
+    </div>
+
+    <div class='MAIbox'>
+
+      <br>
+      Average Time to Complete:
+      <span id='averageCompletion'></span>
+      <br>
+      <br>
+
+      <br>
+      Average Cost to Complete:
+      <span id='averageCost'></span>
+      <br>
+      <br>
+
+      <br>
+      Average Profit:
+      <span id='averageProfit'></span>
+      <br>
+      <br>
+
+      <br>
+      Average Profit per Week:
+      <span id='averageProfitPerWeek'></span>
+      <br>
+      <br>
+
+
+    </div>
+  </div>   <!-- end of MAIoutput -->
+
+
+  <div class='MAIassumptions'>
+
+    <div class='MAItitle'>
+      Assumptions
+    </div>
+
+    <div class='MAIbox'>
+      <br>
+      We're not told how many hours per day the wizard must work and how many he can be resting to regain fatigue. We start with the assumption that the wizard can spare 8 points of fatigue without imparing his ability to work on the project, and that he can take a two hour lunch to recover those points to use again in the afternoon. Modify the lead wizard's daily ST contribution as you see fit.
+      <br>
+      <br>
+      A single wizard leads the project. He hires apprentices at the standard rate of 25 ST/day for $25 per week. We round up, assuming you can't hire part time apprenices. The wizard works continuously and squeezes apprentice training into the evenings and occasional days off. This is for the first spell placed on an object and it's placed at single strength with respect to Notes B and C.
+      <br>
+      <br>
+      The wizard is able to acquire all necessary ingredients at standard prices.
+
+      <br>
+      <br>
+      The cost of capital is ignored.
+
+    </div> <!-- end of MAIbox -->
+
+  </div>   <!-- end of MAIassumptions -->
+
+
+</div>
+<div style="clear: both;"></div> <!-- Clear the floats -->
+
+<br>
+<br>
+<br>
+<br>
+<br>
+
+<div id='refTable'>
+
+
+
+</div>
+
+
+</body>
+</html>

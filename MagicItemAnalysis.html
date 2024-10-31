@@ -67,6 +67,18 @@
     padding: 10px 0; /* Adds additional space if desired */
   }
 
+  .tableContainer {
+    overflow-y: auto;
+
+  }
+
+  th {
+    position: sticky;
+    color: white;
+    top: 0;
+    background-color: black;
+
+  }
 
 
 </style>
@@ -92,6 +104,17 @@
 
 
   function initApp() {
+
+    if ( localStorage.getItem("leadDX") !== null ) {
+
+      readFromLS();
+
+    } else {
+
+      setMagicItems();
+
+    }
+
 
     const miDataList = document.getElementById("magicItemList");
 
@@ -282,11 +305,62 @@
     magicItems[ theItem ].weeklyCost = parseInt( inputs[3].value );
     magicItems[ theItem ].startingCost = parseInt( inputs[4].value );
 
+    document.getElementById('whichItemInput').value = magicItems[ theItem ].name;
+
     recalcItem( magicItems[ theItem ] );
 
     createTable();
 
     updateSpellDisplay();
+
+    writeToLS();
+
+  }
+
+
+  function changeCurrent() {
+
+    foundItem = magicItems.find( item => item.name.toLowerCase() == document.getElementById("whichItemInput").value.toLowerCase() );
+
+    foundItem.price = parseInt( document.getElementById('miPrice').value );
+    foundItem.weeks = parseInt( document.getElementById('miWeeks').value );
+    foundItem.st = parseInt( document.getElementById('miSTDay').value );
+    foundItem.startingCost = parseInt( document.getElementById('miStartingCost').value );
+    foundItem.costWeek = parseInt( document.getElementById('miCostWeek').value );
+
+    console.log(foundItem);
+
+    recalcItem( foundItem );
+
+    createTable();
+
+    updateSpellDisplay();
+
+    writeToLS();
+
+  }
+
+  function writeToLS() {
+
+    localStorage.magicItems = JSON.stringify( magicItems );
+
+    localStorage.leadDX = parseInt( document.getElementById('leadDX').value );
+    localStorage.leadST = parseInt( document.getElementById('leadST').value );
+
+    localStorage.iterations = parseInt( document.getElementById('iterations').value );
+
+  }
+
+
+  function readFromLS() {
+
+    magicItems = JSON.parse( localStorage.magicItems );
+
+    document.getElementById('leadDX').value = localStorage.leadDX;
+
+    document.getElementById('leadST').value = localStorage.leadST;
+
+    document.getElementById('iterations').value = localStorage.iterations;
 
   }
 
@@ -295,16 +369,19 @@
 
     foundItem = magicItems.find( item => item.name.toLowerCase() == document.getElementById("whichItemInput").value.toLowerCase() );
 
-      document.getElementById('miPrice').innerHTML = formatCurrency( foundItem.price );
+      document.getElementById('miPrice').value = foundItem.price;
 
       document.getElementById('miNotes').innerHTML = foundItem.notes;
       document.getElementById('miIngredients').innerHTML = foundItem.ingredients;
 
-      document.getElementById('miWeeks').innerHTML = foundItem.weeks;
+      document.getElementById('miWeeks').value = foundItem.weeks;
 
-      document.getElementById('miSTDay').innerHTML = foundItem.st;
+      document.getElementById('miSTDay').value = foundItem.st;
 
-      document.getElementById('miCostWeek').innerHTML = formatCurrency( foundItem.weeklyCost );
+      document.getElementById('miCostWeek').value = foundItem.weeklyCost ;
+
+      document.getElementById('miStartingCost').value = foundItem.startingCost ;
+
 
       document.getElementById('miNumberOfApprentices').innerHTML = foundItem.apprentices;
 
@@ -374,13 +451,16 @@
       <br>
       Spell: <input id='whichItemInput' list='magicItemList' value='blur' onchange='updateSpellDisplay()'></input><br>
       <br>
-      Price: <span id='miPrice'></span><br>
+      Price: <input type='number' id='miPrice' onchange="changeCurrent()"></input><br>
       <br>
-      Weeks to Make: <span id='miWeeks'></span><br>
+      Weeks to Make: <input type='number' id='miWeeks' onchange="changeCurrent()"></input><br>
       <br>
-      ST per Day: <span id='miSTDay'></span><br>
+      ST per Day: <input type='number' id='miSTDay' onchange="changeCurrent()"></input><br>
       <br>
-      Cost per Week: <span id='miCostWeek'></span><br>
+      Starting Cost: <input type='number' id='miStartingCost' onchange="changeCurrent()"></input><br>
+      <br>
+      <br>
+      Cost per Week: <input type='number' id='miCostWeek' onchange="changeCurrent()"></input><br>
       <br>
       Notes: <span id='miNotes'></span><br>
       <br>
@@ -483,32 +563,36 @@
       <br>
     </div> <!-- end of MAIbox -->
 
+    <butto style='float: right; margin-right: 5vh; padding: 1vh; border-radius: 1vh; border: solid thin;' onclick='setMagicItems();crunchEverything();'>Reset Data</button>
+
   </div>   <!-- end of MAIassumptions -->
 
 
+
 </div>
-<div style="clear: both;"></div> <!-- Clear the floats -->
 
 <br>
 
+<div id='tableContainer'>
 
-<table id="data-table">
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Price</th>
-            <th>Notes</th>
-            <th>Weeks</th>
-            <th>ST</th>
-            <th>Weekly Cost</th>
-            <th>Starting Cost</th>
-            <th>Ingredients</th>
-            <th>Average Profit Weekly</th>
-        </tr>
-    </thead>
-    <tbody></tbody>
-</table>
+  <table id="data-table">
+      <thead>
+          <tr>
+              <th>Name</th>
+              <th>Price</th>
+              <th>Notes</th>
+              <th>Weeks</th>
+              <th>ST</th>
+              <th>Weekly Cost</th>
+              <th>Starting Cost</th>
+              <th>Ingredients</th>
+              <th>Average Profit Weekly</th>
+          </tr>
+      </thead>
+      <tbody></tbody>
+  </table>
 
+</div>
 
 </body>
 </html>

@@ -1,7 +1,9 @@
 
 
 
-const magicItems = [
+function setMagicItems() {
+
+magicItems = [
 
   {name:'Magic Fist',price:2000, notes:'', weeks:3, st:35, weeklyCost:0, startingCost:0, ingredients:'-'},
   {name:'Blur',price:3000, notes:'', weeks:5, st:75, weeklyCost:15, startingCost:0, ingredients:'-'},
@@ -116,6 +118,9 @@ const magicItems = [
 
 
    ];
+
+}
+
 
 
 // const magicItems = [
